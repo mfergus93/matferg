@@ -1,0 +1,77 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>Just for Fun | Matt Ferguson</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content="Small interactive experiments by Matt Ferguson, including the fictional Launch a Missile map game." />
+		<meta name="theme-color" content="#101820" />
+		<link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="stylesheet" href="assets/css/spacing.css?v=20260802-1" />
+		<link rel="stylesheet" href="assets/css/portfolio.css?v=20260805-6" />
+		<link rel="stylesheet" href="assets/css/fun.css?v=20260805-4" />
+	</head>
+	<body>
+		<a class="skip-link" href="#game">Skip to game</a>
+
+		<main id="game" class="game-shell">
+			<h1 class="visually-hidden">Just for Fun</h1>
+			<nav class="page-tabs page-tabs-standalone page-tabs-compact" aria-label="Site sections">
+				<a href="index.html#main" data-tab="professional">Professional</a>
+				<a href="photography.html" data-tab="photography">Photography</a>
+				<a href="fun.html" data-tab="fun" aria-current="page">Just for Fun</a>
+			</nav>
+
+			<details class="section-card fun-item astronaut-game">
+				<summary>Astronaut Dressup</summary>
+				<div class="puzzle-frame">
+					<iframe src="games/dress-astronaut/index.html?v=20260805-19" title="Astronaut Dressup game" loading="lazy"></iframe>
+				</div>
+			</details>
+
+			<details class="section-card fun-item missile-game" hidden>
+				<summary>Launch a Missile</summary>
+				<section class="game-card" aria-label="Launch a Missile game">
+					<div id="location-prompt" class="location-prompt">
+						<button id="locate-button" type="button">Use My Location</button>
+					</div>
+					<p id="game-status" class="game-status" role="status" aria-live="polite"></p>
+					<div id="map-stage" class="map-stage" hidden>
+						<div id="missile-map" aria-label="Map showing the animated flight"></div>
+						<div id="countdown" class="countdown" aria-hidden="true"></div>
+					</div>
+					<button id="replay-button" class="replay-button" type="button" hidden>Launch Again</button>
+				</section>
+			</details>
+
+			<details class="section-card fun-item galaxies-game">
+				<summary>Galaxies</summary>
+				<div class="puzzle-frame">
+					<iframe src="games/galaxies/index.html?v=20260802-2" title="Galaxies puzzle" loading="lazy"></iframe>
+				</div>
+			</details>
+
+			<details class="section-card fun-item map-game">
+				<summary>Map</summary>
+				<div class="puzzle-frame">
+					<iframe src="games/map/index.html?v=20260802-2" title="Map puzzle" loading="lazy"></iframe>
+				</div>
+			</details>
+
+			<details class="section-card fun-item rubber-chickens-video">
+				<summary>Rubber Chickens</summary>
+				<div class="video-frame">
+					<iframe src="https://www.youtube.com/embed/nHc288IPFzk?feature=oembed" title="Duck Army rubber chickens video" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+				</div>
+			</details>
+
+			<div class="section-card fun-item">
+				<a href="https://matspoems.com" target="_blank" rel="noopener" class="matspoems-direct-link">Poetry</a>
+			</div>
+
+			<p class="puzzle-license"><a href="games/galaxies/LICENSE.txt">MIT License</a></p>
+		</main>
+
+	</body>
+</html>
