@@ -10,6 +10,11 @@ High-confidence scanner requests are blocked and written to a separate security
 event table. Records are deleted after 30 days by default. The log-reading and
 email-test endpoints require a secret bearer token.
 
+Daily reporting uses a conservative session classifier. Visits are split after
+30 minutes of inactivity; single browser-looking requests remain uncertain;
+and impossible page velocity or rapid route sweeps are classified as automated.
+Target-area visits are highlighted only after session-level evaluation.
+
 ## Before deployment
 
 1. Create a Cloudflare account and add `matferg.com` as a zone.
