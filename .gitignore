@@ -26,3 +26,4 @@ node_modules/
 # Local Worker credentials
 .dev.vars*
 *.secret.clixml
+.wrangler/
