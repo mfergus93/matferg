@@ -8,6 +8,10 @@
     {
       "pattern": "matferg.com/*",
       "zone_name": "matferg.com"
+    },
+    {
+      "pattern": "www.matferg.com/*",
+      "zone_name": "matferg.com"
     }
   ],
   "d1_databases": [
@@ -18,7 +22,8 @@
     }
   ],
   "vars": {
-    "RETENTION_DAYS": "30"
+    "RETENTION_DAYS": "30",
+    "SITE_NAME": "matferg.com"
   },
   "triggers": {
     "crons": ["17 4 * * *"]

@@ -4688,3 +4688,20 @@ input, select, textarea {
 		}
 
 	}
+
+.site-privacy {
+	padding: 0.75rem 1rem 1.5rem;
+	text-align: center;
+	font-size: 0.8rem;
+}
+
+.site-privacy a {
+	color: inherit;
+	opacity: 0.7;
+}
+
+.privacy-page {
+	max-width: 48rem;
+	margin: 0 auto;
+	padding: 3rem 2rem;
+}

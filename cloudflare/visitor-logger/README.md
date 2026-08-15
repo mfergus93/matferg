@@ -3,9 +3,12 @@
 Cloudflare Worker that runs in front of `matferg.com`, records HTML visits in
 Cloudflare D1, and forwards each request to the existing GitHub Pages origin.
 
-Each visit records the timestamp, IP address, country, path, referrer, and user
-agent. Records are deleted after 30 days by default. The log-reading endpoint
-requires a secret bearer token.
+Only top-level HTML page visits are recorded. Each record includes the
+timestamp, IP address, approximate Cloudflare location, path (without its query
+string), sanitized referrer, user agent, network, and classification evidence.
+High-confidence scanner requests are blocked and written to a separate security
+event table. Records are deleted after 30 days by default. The log-reading and
+email-test endpoints require a secret bearer token.
 
 ## Before deployment
 
@@ -35,6 +38,13 @@ Copy the returned database ID into `wrangler.jsonc`, replacing
 
 ```powershell
 npx wrangler@latest d1 execute matferg-visitors --remote --file schema.sql
+```
+
+For an existing database created from the older schema, apply the tracked
+migration once instead:
+
+```powershell
+npx wrangler@latest d1 execute matferg-visitors --remote --file migrations/0001_harden_logging.sql
 ```
 
 Create the private log-access token. Wrangler prompts for the value without
@@ -71,8 +81,8 @@ token file that is excluded from Git.
 
 ## Privacy and security
 
-Raw IP addresses may constitute personal data. Before enabling this Worker,
-add an accurate privacy notice to the website. Keep retention short, do not
-publish the token or database, restrict Cloudflare account access, and use the
-data only for a disclosed purpose. The logger records page visits, including
-bots that request HTML; it does not establish a visitor's real-world identity.
+Raw IP addresses may constitute personal data. The site links to an accurate
+privacy notice. Keep retention short, do not publish the token or database,
+restrict Cloudflare account access, and use the data only for the disclosed
+security and audience-measurement purposes. Classification is probabilistic and
+does not establish a visitor's real-world identity.
