@@ -1,8 +1,10 @@
 {
   "name": "matferg-visitor-logger",
+  "type": "module",
   "private": true,
   "scripts": {
     "check": "node --check src/index.js",
+    "test": "node --test test/*.test.mjs",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev"
   },
