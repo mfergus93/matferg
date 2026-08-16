@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { attributionData, buildSessions, classifyRequest, classifyRetroSession, classifySessionEvidence, isReferredSource, normalizeSource, parseDeviceBrowser, sanitizeReferrer, validateEngagement } from "../src/index.js";
+import { attributionData, buildHistoricReferralIpGroups, buildSessions, classifyRequest, classifyRetroSession, classifySessionEvidence, historicalPathKind, isReferredSource, normalizeSource, parseDeviceBrowser, sanitizeReferrer, validateEngagement } from "../src/index.js";
 
 const base = {
   ip_address: "203.0.113.1", user_agent: "Mozilla/5.0", country: "US",
@@ -133,14 +133,14 @@ test("complete audit endpoint and scheduled alert retry remain wired", async () 
   assert.match(source, /association: "same_ip_time_window"/);
 });
 
-test("retro-v1 reports only external referrals conservatively", () => {
+test("retro session scoring reports only external referrals conservatively", () => {
   const internal = buildSessions([visit("2026-08-15T10:00:00.000Z", "/", { referrer: "https://matferg.com/" })])[0];
   assert.equal(classifyRetroSession(internal, "matferg.com"), null);
   const external = buildSessions([visit("2026-08-15T10:00:00.000Z", "/", { referrer: "https://facebook.com/profile" })])[0];
   assert.equal(classifyRetroSession(external, "matferg.com").classification, "uncertain");
 });
 
-test("retro-v1 detects referred automation and paced humans", () => {
+test("retro session scoring detects referred automation and paced humans", () => {
   const referred = { referrer: "https://linkedin.com/in/example", user_agent: "Mozilla/5.0" };
   const burst = buildSessions([
     visit("2026-08-15T10:00:00.000Z", "/", referred),
@@ -153,4 +153,84 @@ test("retro-v1 detects referred automation and paced humans", () => {
     visit("2026-08-15T10:00:30.000Z", "/two", referred),
   ])[0];
   assert.equal(classifyRetroSession(paced, "matferg.com").classification, "likely_human");
+});
+
+test("historical paths separate pages, assets, and technical probes", () => {
+  assert.equal(historicalPathKind("/"), "page");
+  assert.equal(historicalPathKind("/fun.html"), "page");
+  assert.equal(historicalPathKind("/assets/images/favicon.svg"), "asset");
+  assert.equal(historicalPathKind("/images/heart.jpg"), "asset");
+  assert.equal(historicalPathKind("/favicon.ico"), "asset");
+  assert.equal(historicalPathKind("/games/map/LICENSE.txt"), "asset");
+  assert.equal(historicalPathKind("/robots.txt"), "probe");
+  assert.equal(historicalPathKind("/sitemap-index.xml"), "probe");
+  assert.equal(historicalPathKind("/admin"), "probe");
+  assert.equal(historicalPathKind("/wp-login.php"), "probe");
+});
+
+test("retro-v2 never turns delayed asset requests into pages or dwell", () => {
+  const referral = { referrer: "https://mfergus93.github.io/matferg", ip_address: "104.249.59.237" };
+  const rows = [
+    visit("2026-08-03T11:45:12.000Z", "/", referral),
+    visit("2026-08-03T12:05:57.000Z", "/assets/images/favicon.svg", referral),
+    visit("2026-08-03T12:05:59.000Z", "/images/heart.jpg", referral),
+    visit("2026-08-03T12:06:56.000Z", "/favicon.ico", referral),
+  ];
+  const [group] = buildHistoricReferralIpGroups(rows, "matferg.com");
+  assert.equal(group.pages.length, 1);
+  assert.equal(group.routes.length, 1);
+  assert.equal(group.assets.length, 3);
+  assert.equal(group.pageSpanSeconds, 0);
+  assert.equal(group.classification, "likely_automated");
+  assert.match(group.reasons.join("; "), /delayed asset-only retrieval/);
+});
+
+test("retro-v2 detects a cross-IP robots sitemap admin cluster", () => {
+  const google = { referrer: "https://www.google.com/search?q=matferg.com", user_agent: "Mozilla/5.0" };
+  const groups = buildHistoricReferralIpGroups([
+    visit("2026-08-03T13:34:26.000Z", "/robots.txt", { ...google, ip_address: "104.28.254.16" }),
+    visit("2026-08-03T13:34:31.000Z", "/sitemap-index.xml", { ...google, ip_address: "104.28.222.16" }),
+    visit("2026-08-03T13:34:42.000Z", "/admin", { ...google, ip_address: "104.28.222.16" }),
+  ], "matferg.com");
+  assert.equal(groups.length, 2);
+  assert.ok(groups.every((group) => group.classification === "likely_automated"));
+  assert.ok(groups.every((group) => group.pages.length === 0));
+  assert.ok(groups.every((group) => group.reasons.includes("cross-IP technical reconnaissance cluster")));
+});
+
+test("retro-v2 preserves paced HTML navigation as human evidence", () => {
+  const referred = { referrer: "https://linkedin.com/in/example", user_agent: "Mozilla/5.0", ip_address: "66.64.0.4" };
+  const [group] = buildHistoricReferralIpGroups([
+    visit("2026-08-15T10:00:00.000Z", "/", referred),
+    visit("2026-08-15T10:00:30.000Z", "/fun.html", referred),
+  ], "matferg.com");
+  assert.equal(group.classification, "likely_human");
+  assert.equal(group.pages.length, 2);
+  assert.equal(group.routes.length, 2);
+  assert.equal(group.pageSpanSeconds, 30);
+});
+
+test("retro-v2 treats hosting network as context rather than an automatic rejection", () => {
+  const [group] = buildHistoricReferralIpGroups([
+    visit("2026-08-15T10:00:00.000Z", "/", {
+      referrer: "https://linkedin.com/in/example",
+      user_agent: "Mozilla/5.0",
+      ip_address: "203.0.113.10",
+      asn: 16509,
+      as_organization: "Amazon",
+    }),
+  ], "matferg.com");
+  assert.equal(group.classification, "uncertain");
+  assert.ok(group.reasons.includes("hosting network"));
+});
+
+test("retro-v2 groups repeated referred sessions by exact IP", () => {
+  const referred = { referrer: "https://matferg.com/", user_agent: "Mozilla/5.0", ip_address: "203.0.113.9" };
+  const groups = buildHistoricReferralIpGroups([
+    visit("2026-08-15T10:00:00.000Z", "/", referred),
+    visit("2026-08-15T11:00:00.000Z", "/", referred),
+  ], "matspoems.com");
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].pageSessions.length, 2);
+  assert.equal(groups[0].sourceCategory, "owned_referral");
 });
