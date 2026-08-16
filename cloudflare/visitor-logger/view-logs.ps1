@@ -12,6 +12,7 @@ if (-not (Test-Path -LiteralPath $tokenFile)) {
 $secureToken = Import-Clixml -LiteralPath $tokenFile
 $credential = [System.Net.NetworkCredential]::new("", $secureToken)
 $token = $credential.Password
+$headers = @{ Authorization = "Bearer $token" }
 
 $query = "limit=$Limit"
 if ($IpAddress) {
